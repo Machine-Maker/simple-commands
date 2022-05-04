@@ -1,0 +1,4 @@
+name: CommandsExample
+version: @version@
+main: me.machinemaker.commands.example.ExamplePlugin
+api-version: 1.18

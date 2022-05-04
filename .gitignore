@@ -1,0 +1,6 @@
+# Example plugin server
+example/run
+
+**/.gradle/
+**/.idea/
+**/build/
