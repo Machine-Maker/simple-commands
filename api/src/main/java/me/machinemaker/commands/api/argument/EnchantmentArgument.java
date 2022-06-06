@@ -1,4 +1,4 @@
-package me.machinemaker.commands.api.arguments;
+package me.machinemaker.commands.api.argument;
 
 import org.bukkit.enchantments.Enchantment;
 

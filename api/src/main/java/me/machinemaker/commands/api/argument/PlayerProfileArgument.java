@@ -1,8 +1,8 @@
-package me.machinemaker.commands.api.arguments;
+package me.machinemaker.commands.api.argument;
 
+import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import org.bukkit.command.CommandSender;
 
 import java.util.Collection;
 
@@ -10,6 +10,6 @@ public class PlayerProfileArgument implements MinecraftArgument<PlayerProfileArg
 
     @FunctionalInterface
     public interface Result {
-        Collection<PlayerProfile> getPlayerProfiles(CommandSender sender) throws CommandSyntaxException;
+        Collection<PlayerProfile> getPlayerProfiles(BukkitBrigadierCommandSource sender) throws CommandSyntaxException;
     }
 }

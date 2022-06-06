@@ -1,5 +1,6 @@
 package me.machinemaker.commands.api;
 
+import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestion;
@@ -25,9 +26,9 @@ import java.util.Objects;
 final class PaperBrigadierCommand extends Command implements PluginIdentifiableCommand {
 
     private final PaperCommandDispatcher dispatcher;
-    private final LiteralCommandNode<CommandSender> root;
+    private final LiteralCommandNode<BukkitBrigadierCommandSource> root;
 
-    PaperBrigadierCommand(PaperCommandDispatcher dispatcher, LiteralCommandNode<CommandSender> root) {
+    PaperBrigadierCommand(PaperCommandDispatcher dispatcher, LiteralCommandNode<BukkitBrigadierCommandSource> root) {
         super(root.getLiteral());
         this.setDescription(String.join("\n", root.getExamples()));
         this.setUsage(root.getUsageText());
@@ -45,7 +46,7 @@ final class PaperBrigadierCommand extends Command implements PluginIdentifiableC
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         try {
-            this.dispatcher.execute(constructCommand(commandLabel, args), sender);
+            this.dispatcher.execute(constructCommand(commandLabel, args), this.dispatcher.brigadierConverter.convertCommandSender(sender));
         } catch (CommandSyntaxException syntaxException) { // Copied from nms Commands.java
             sendFailure(sender, PaperBrigadier.componentFromMessage(syntaxException.getRawMessage()));
             if (syntaxException.getInput() != null && syntaxException.getCursor() >= 0) {
@@ -99,8 +100,8 @@ final class PaperBrigadierCommand extends Command implements PluginIdentifiableC
     }
 
     @Override
-    public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
-        ParseResults<CommandSender> parseResults = this.dispatcher.parse(constructCommand(alias, args), sender);
+    public @NotNull List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+        ParseResults<BukkitBrigadierCommandSource> parseResults = this.dispatcher.parse(constructCommand(alias, args), this.dispatcher.brigadierConverter.convertCommandSender(sender));
         Suggestions suggestions = this.dispatcher.getCompletionSuggestions(parseResults).join();
         return suggestions.getList().stream().map(Suggestion::getText).toList();
     }
@@ -120,10 +121,10 @@ final class PaperBrigadierCommand extends Command implements PluginIdentifiableC
 
     @Override
     public boolean testPermissionSilent(@NotNull CommandSender target) {
-        return this.root.getRequirement().test(target);
+        return this.root.getRequirement().test(this.dispatcher.brigadierConverter.convertCommandSender(target));
     }
 
-    public LiteralCommandNode<CommandSender> node() {
+    public LiteralCommandNode<BukkitBrigadierCommandSource> node() {
         return this.root;
     }
 }

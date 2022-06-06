@@ -1,8 +1,9 @@
 package me.machinemaker.commands.example;
 
+import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.mojang.brigadier.Command;
 import me.machinemaker.commands.api.PaperCommandDispatcher;
-import me.machinemaker.commands.api.arguments.PlayerProfileArgument;
+import me.machinemaker.commands.api.argument.PlayerProfileArgument;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -45,9 +46,9 @@ public class ExamplePlugin extends JavaPlugin {
         THIRD;
     }
 
-    private static Command<CommandSender> sendMessage(Component msg) {
+    private static Command<BukkitBrigadierCommandSource> sendMessage(Component msg) {
         return context -> {
-            context.getSource().sendMessage(msg);
+            context.getSource().getBukkitSender().sendMessage(msg);
             return 1;
         };
     }

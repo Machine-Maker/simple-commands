@@ -1,4 +1,4 @@
-package me.machinemaker.commands.api.arguments;
+package me.machinemaker.commands.api.argument;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;

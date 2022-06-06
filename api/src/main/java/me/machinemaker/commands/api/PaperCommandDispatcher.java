@@ -28,10 +28,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public final class PaperCommandDispatcher extends CommandDispatcher<CommandSender> {
+public final class PaperCommandDispatcher extends CommandDispatcher<BukkitBrigadierCommandSource> {
 
     private final Plugin plugin;
-    private final BrigadierConverter brigadierConverter = Services.service(BrigadierConverter.Provider.class).orElseThrow().get();
+    final BrigadierConverter brigadierConverter = Services.service(BrigadierConverter.Provider.class).orElseThrow().get();
     private boolean registered = false;
 
     public PaperCommandDispatcher(Plugin plugin) {
@@ -39,7 +39,7 @@ public final class PaperCommandDispatcher extends CommandDispatcher<CommandSende
     }
 
     @Override
-    public LiteralCommandNode<CommandSender> register(LiteralArgumentBuilder<CommandSender> command) {
+    public LiteralCommandNode<BukkitBrigadierCommandSource> register(LiteralArgumentBuilder<BukkitBrigadierCommandSource> command) {
         Preconditions.checkState(!this.registered, "Cannot register commands after they've been registered to the command map");
         return super.register(command);
     }
@@ -47,8 +47,8 @@ public final class PaperCommandDispatcher extends CommandDispatcher<CommandSende
     public void apply() {
         Preconditions.checkState(!this.registered, "Cannot register commands after they've been registered to the command map");
         List<Command> commands = new ArrayList<>();
-        for (CommandNode<CommandSender> child : this.getRoot().getChildren()) {
-            if (child instanceof LiteralCommandNode<CommandSender> literalChild) {
+        for (CommandNode<BukkitBrigadierCommandSource> child : this.getRoot().getChildren()) {
+            if (child instanceof LiteralCommandNode<BukkitBrigadierCommandSource> literalChild) {
                 commands.add(new PaperBrigadierCommand(this, literalChild));
             } else {
                 throw new IllegalStateException(child + " is not a literal command node");
@@ -71,7 +71,7 @@ public final class PaperCommandDispatcher extends CommandDispatcher<CommandSende
             if (strippedBuffer.trim().isEmpty()) {
                 return;
             }
-            final ParseResults<CommandSender> parseResults = PaperCommandDispatcher.this.parse(strippedBuffer, event.getSender());
+            final ParseResults<BukkitBrigadierCommandSource> parseResults = PaperCommandDispatcher.this.parse(strippedBuffer, PaperCommandDispatcher.this.brigadierConverter.convertCommandSender(event.getSender()));
             final Suggestions suggestions = PaperCommandDispatcher.this.getCompletionSuggestions(parseResults).join();
             event.setHandled(true);
             event.completions(suggestions.getList().stream().map(EventListener::convert).toList());
