@@ -17,7 +17,7 @@ public class ExamplePlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         dispatcher.register(literal("test_cmd")
-                .executes(sendMessage(Component.text("ROOT")))
+                // .executes(sendMessage(Component.text("ROOT")))
                 .then(argument("arg", EXAMPLE_ARG_ENUM_ARGUMENT_TYPE)
                         .executes(context -> {
                             return sendMessage(Component.text("arg: " + context.getArgument("arg", ExampleArg.class).name())).run(context);

@@ -5,6 +5,14 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.papermc.paper.brigadier.PaperBrigadier;
+import net.kyori.adventure.identity.Identity;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginIdentifiableCommand;
@@ -12,6 +20,7 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Objects;
 
 public class PaperBrigadierCommand extends Command implements PluginIdentifiableCommand {
 
@@ -29,12 +38,62 @@ public class PaperBrigadierCommand extends Command implements PluginIdentifiable
         this.root = root;
     }
 
+    private static void sendFailure(@NotNull CommandSender sender, Component message) {
+        sender.sendMessage(Identity.nil(), Component.text().color(NamedTextColor.RED).append(message));
+    }
+
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         try {
             this.dispatcher.execute(constructCommand(commandLabel, args), sender);
-        } catch (CommandSyntaxException e) {
-            throw new IllegalArgumentException(e);
+        } catch (CommandSyntaxException syntaxException) { // Copied from nms Commands.java
+            sendFailure(sender, PaperBrigadier.componentFromMessage(syntaxException.getRawMessage()));
+            if (syntaxException.getInput() != null && syntaxException.getCursor() >= 0) {
+                int j = Math.min(syntaxException.getInput().length(), syntaxException.getCursor());
+                TextComponent.Builder builder = Component.text()
+                        .color(NamedTextColor.GRAY)
+                        .clickEvent(ClickEvent.runCommand(commandLabel));
+
+                if (j > 10) {
+                    builder.append(Component.text("..."));
+                }
+
+                builder.append(Component.text(syntaxException.getInput().substring(Math.max(0, j - 10), j)));
+                if (j < syntaxException.getInput().length()) {
+                    builder.append(Component.text()
+                            .content(syntaxException.getInput().substring(j))
+                            .color(NamedTextColor.RED)
+                            .decorate(TextDecoration.UNDERLINED)
+                    );
+                }
+                builder.append(Component.translatable("command.context.here")
+                        .color(NamedTextColor.RED)
+                        .decorate(TextDecoration.ITALIC)
+                );
+                sendFailure(sender, builder.build());
+            }
+        } catch (Exception exception) {
+            TextComponent.Builder chatcomponenttext = Component.text().content(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
+
+            if (this.getPlugin().getSLF4JLogger().isDebugEnabled()) {
+                this.getPlugin().getSLF4JLogger().error("Command exception: {}", "/" + commandLabel, exception);
+                StackTraceElement[] astacktraceelement = exception.getStackTrace();
+
+                for (int k = 0; k < Math.min(astacktraceelement.length, 3); ++k) {
+                    chatcomponenttext
+                            .append(Component.text("\n\n"))
+                            .append(Component.text(astacktraceelement[k].getMethodName()))
+                            .append(Component.text("\n "))
+                            .append(Component.text(Objects.requireNonNullElse(astacktraceelement[k].getFileName(), "unknown file")))
+                            .append(Component.text(":"))
+                            .append(Component.text(String.valueOf(astacktraceelement[k].getLineNumber())));
+                }
+            }
+            sendFailure(sender, Component.translatable()
+                    .key("command.failed")
+                    .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, chatcomponenttext.build()))
+                    .build()
+            );
         }
         return true;
     }

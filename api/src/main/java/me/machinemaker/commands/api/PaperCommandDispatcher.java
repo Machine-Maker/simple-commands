@@ -8,12 +8,15 @@ import com.google.common.base.Preconditions;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.arguments.ArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.mojang.brigadier.tree.RootCommandNode;
 import io.papermc.paper.brigadier.PaperBrigadier;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -70,13 +73,21 @@ public final class PaperCommandDispatcher extends CommandDispatcher<CommandSende
             final ParseResults<CommandSender> parseResults = PaperCommandDispatcher.this.parse(strippedBuffer, event.getSender());
             final Suggestions suggestions = PaperCommandDispatcher.this.getCompletionSuggestions(parseResults).join();
             event.setHandled(true);
-            event.completions(suggestions.getList().stream().map(suggestion -> AsyncTabCompleteEvent.Completion.completion(suggestion.getText(), PaperBrigadier.componentFromMessage(suggestion.getTooltip()))).toList());
+            event.completions(suggestions.getList().stream().map(EventListener::convert).toList());
         }
 
         @EventHandler
         public void onCommandRegister(CommandRegisteredEvent<BukkitBrigadierCommandSource> event) {
             if (event.getCommand() instanceof PaperBrigadierCommand command && command.getPlugin() == PaperCommandDispatcher.this.plugin) {
                 event.setLiteral((LiteralCommandNode<BukkitBrigadierCommandSource>) convert(command.node(), event.getBrigadierCommand()));
+            }
+        }
+
+        private static AsyncTabCompleteEvent.Completion convert(Suggestion suggestion) {
+            if (suggestion.getTooltip() != null) {
+                return AsyncTabCompleteEvent.Completion.completion(suggestion.getText(), PaperBrigadier.componentFromMessage(suggestion.getTooltip()));
+            } else {
+                return AsyncTabCompleteEvent.Completion.completion(suggestion.getText());
             }
         }
 
@@ -90,7 +101,7 @@ public final class PaperCommandDispatcher extends CommandDispatcher<CommandSende
                 }
                 return newNode;
             } else if (node instanceof ArgumentCommandNode<CommandSender, ?> argument) {
-                final ArgumentCommandNode<BukkitBrigadierCommandSource, ?> newNode = RequiredArgumentBuilder.<BukkitBrigadierCommandSource, Object>argument(argument.getName(), (ArgumentType<Object>) argument.getType())
+                final ArgumentCommandNode<BukkitBrigadierCommandSource, ?> newNode = RequiredArgumentBuilder.<BukkitBrigadierCommandSource, String>argument(argument.getName(), StringArgumentType.word())
                         .requires(bukkitBrigadierCommandSource -> node.getRequirement().test(bukkitBrigadierCommandSource.getBukkitSender()))
                         .suggests(executor)
                         .executes(executor).build();
@@ -99,7 +110,7 @@ public final class PaperCommandDispatcher extends CommandDispatcher<CommandSende
                 }
                 return newNode;
             } else {
-                throw new IllegalStateException(node + " is a root");
+                throw new IllegalStateException(node + " is not a LiteralCommandNode or ArgumentCommandNode");
             }
         }
     }
