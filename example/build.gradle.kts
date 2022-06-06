@@ -14,13 +14,20 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
     implementation(project(":api"))
 }
 
 tasks {
     runServer {
         minecraftVersion("1.18.2")
+    }
+
+    java {
+        withSourcesJar()
+    }
+
+    assemble {
+        dependsOn(shadowJar)
     }
 
     processResources {
@@ -30,6 +37,9 @@ tasks {
     }
 
     shadowJar {
-        relocate("me.machinemaker.commands.api", "me.machinemaker.commands.example.libs.commands")
+        mergeServiceFiles()
+        // relocate("me.machinemaker.commands", "me.machinemaker.commands.example.libs.commands") {
+        //     exclude("me.machinemaker.commands.example.*")
+        // }
     }
 }

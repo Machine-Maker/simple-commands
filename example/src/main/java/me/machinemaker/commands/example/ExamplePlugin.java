@@ -2,12 +2,13 @@ package me.machinemaker.commands.example;
 
 import com.mojang.brigadier.Command;
 import me.machinemaker.commands.api.PaperCommandDispatcher;
+import me.machinemaker.commands.api.arguments.PlayerProfileArgument;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import static me.machinemaker.commands.api.Builders.argument;
-import static me.machinemaker.commands.api.Builders.literal;
+import static me.machinemaker.commands.api.Arguments.argument;
+import static me.machinemaker.commands.api.Arguments.literal;
 
 public class ExamplePlugin extends JavaPlugin {
 
@@ -18,11 +19,22 @@ public class ExamplePlugin extends JavaPlugin {
     public void onEnable() {
         dispatcher.register(literal("test_cmd")
                 // .executes(sendMessage(Component.text("ROOT")))
-                .then(argument("arg", EXAMPLE_ARG_ENUM_ARGUMENT_TYPE)
+                .then(argument("gp", new PlayerProfileArgument())
                         .executes(context -> {
-                            return sendMessage(Component.text("arg: " + context.getArgument("arg", ExampleArg.class).name())).run(context);
+                            return sendMessage(Component.text(context.getArgument("gp", PlayerProfileArgument.Result.class).getPlayerProfiles(context.getSource()).toString())).run(context);
                         })
+
                 )
+                // .then(argument("arg", EXAMPLE_ARG_ENUM_ARGUMENT_TYPE)
+                //         .executes(context -> {
+                //             return sendMessage(Component.text("arg: " + context.getArgument("arg", ExampleArg.class).name())).run(context);
+                //         })
+                //         .then(enchantment("ench")
+                //                 .executes(context -> {
+                //                     return sendMessage(Component.text("arg: " + context.getArgument("arg", ExampleArg.class).name() + " ench: " + context.getArgument("ench", Enchantment.class).translationKey())).run(context);
+                //                 })
+                //         )
+                // )
         );
         dispatcher.apply();
     }

@@ -10,10 +10,13 @@ repositories {
 }
 
 dependencies {
-    api("com.mojang:brigadier:1.0.18")
-    compileOnly("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
-    compileOnly("io.papermc.paper:paper-mojangapi:1.18.2-R0.1-SNAPSHOT")
+    compileOnlyApi("com.mojang:brigadier:1.0.18")
+    compileOnlyApi("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
+    compileOnlyApi("io.papermc.paper:paper-mojangapi:1.18.2-R0.1-SNAPSHOT") {
+        exclude("com.mojang", "brigadier")
+    }
+    runtimeOnly(project(":nms", configuration = "reobf"))
 
-    implementation(project(":nms", configuration = "reobf"))
+    testImplementation("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
 }
 

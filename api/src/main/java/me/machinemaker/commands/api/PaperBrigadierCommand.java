@@ -22,12 +22,12 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Objects;
 
-public class PaperBrigadierCommand extends Command implements PluginIdentifiableCommand {
+final class PaperBrigadierCommand extends Command implements PluginIdentifiableCommand {
 
     private final PaperCommandDispatcher dispatcher;
     private final LiteralCommandNode<CommandSender> root;
 
-    public PaperBrigadierCommand(PaperCommandDispatcher dispatcher, LiteralCommandNode<CommandSender> root) {
+    PaperBrigadierCommand(PaperCommandDispatcher dispatcher, LiteralCommandNode<CommandSender> root) {
         super(root.getLiteral());
         this.setDescription(String.join("\n", root.getExamples()));
         this.setUsage(root.getUsageText());

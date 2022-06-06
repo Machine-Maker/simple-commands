@@ -7,7 +7,6 @@ import com.destroystokyo.paper.event.server.AsyncTabCompleteEvent;
 import com.google.common.base.Preconditions;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
-import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
@@ -16,8 +15,9 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import com.mojang.brigadier.tree.RootCommandNode;
 import io.papermc.paper.brigadier.PaperBrigadier;
+import me.machinemaker.commands.api.brigadier.BrigadierConverter;
+import net.kyori.adventure.util.Services;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
@@ -31,6 +31,7 @@ import java.util.Locale;
 public final class PaperCommandDispatcher extends CommandDispatcher<CommandSender> {
 
     private final Plugin plugin;
+    private final BrigadierConverter brigadierConverter = Services.service(BrigadierConverter.Provider.class).orElseThrow().get();
     private boolean registered = false;
 
     public PaperCommandDispatcher(Plugin plugin) {
@@ -79,7 +80,7 @@ public final class PaperCommandDispatcher extends CommandDispatcher<CommandSende
         @EventHandler
         public void onCommandRegister(CommandRegisteredEvent<BukkitBrigadierCommandSource> event) {
             if (event.getCommand() instanceof PaperBrigadierCommand command && command.getPlugin() == PaperCommandDispatcher.this.plugin) {
-                event.setLiteral((LiteralCommandNode<BukkitBrigadierCommandSource>) convert(command.node(), event.getBrigadierCommand()));
+                event.setLiteral((LiteralCommandNode<BukkitBrigadierCommandSource>) PaperCommandDispatcher.this.brigadierConverter.convert(command.node(), event.getBrigadierCommand()));
             }
         }
 
@@ -88,29 +89,6 @@ public final class PaperCommandDispatcher extends CommandDispatcher<CommandSende
                 return AsyncTabCompleteEvent.Completion.completion(suggestion.getText(), PaperBrigadier.componentFromMessage(suggestion.getTooltip()));
             } else {
                 return AsyncTabCompleteEvent.Completion.completion(suggestion.getText());
-            }
-        }
-
-        private static CommandNode<BukkitBrigadierCommandSource> convert(CommandNode<CommandSender> node, BukkitBrigadierCommand<BukkitBrigadierCommandSource> executor) {
-            if (node instanceof LiteralCommandNode<CommandSender> literal) {
-                final LiteralCommandNode<BukkitBrigadierCommandSource> newNode = LiteralArgumentBuilder.<BukkitBrigadierCommandSource>literal(literal.getLiteral())
-                        .requires(bukkitBrigadierCommandSource -> node.getRequirement().test(bukkitBrigadierCommandSource.getBukkitSender()))
-                        .executes(executor).build();
-                for (CommandNode<CommandSender> child : literal.getChildren()) {
-                    newNode.addChild(convert(child, executor));
-                }
-                return newNode;
-            } else if (node instanceof ArgumentCommandNode<CommandSender, ?> argument) {
-                final ArgumentCommandNode<BukkitBrigadierCommandSource, ?> newNode = RequiredArgumentBuilder.<BukkitBrigadierCommandSource, String>argument(argument.getName(), StringArgumentType.word())
-                        .requires(bukkitBrigadierCommandSource -> node.getRequirement().test(bukkitBrigadierCommandSource.getBukkitSender()))
-                        .suggests(executor)
-                        .executes(executor).build();
-                for (CommandNode<CommandSender> child : argument.getChildren()) {
-                    newNode.addChild(convert(child, executor));
-                }
-                return newNode;
-            } else {
-                throw new IllegalStateException(node + " is not a LiteralCommandNode or ArgumentCommandNode");
             }
         }
     }
