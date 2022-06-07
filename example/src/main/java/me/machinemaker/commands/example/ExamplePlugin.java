@@ -3,13 +3,13 @@ package me.machinemaker.commands.example;
 import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.mojang.brigadier.Command;
 import me.machinemaker.commands.api.PaperCommandDispatcher;
+import me.machinemaker.commands.api.argument.EnchantmentArgument;
 import me.machinemaker.commands.api.argument.PlayerProfileArgument;
 import net.kyori.adventure.text.Component;
-import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import static me.machinemaker.commands.api.Arguments.argument;
-import static me.machinemaker.commands.api.Arguments.literal;
+import static me.machinemaker.commands.api.argument.Arguments.argument;
+import static me.machinemaker.commands.api.argument.Arguments.literal;
 
 public class ExamplePlugin extends JavaPlugin {
 
@@ -19,23 +19,8 @@ public class ExamplePlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         dispatcher.register(literal("test_cmd")
-                // .executes(sendMessage(Component.text("ROOT")))
-                .then(argument("gp", new PlayerProfileArgument())
-                        .executes(context -> {
-                            return sendMessage(Component.text(context.getArgument("gp", PlayerProfileArgument.Result.class).getPlayerProfiles(context.getSource()).toString())).run(context);
-                        })
-
-                )
-                // .then(argument("arg", EXAMPLE_ARG_ENUM_ARGUMENT_TYPE)
-                //         .executes(context -> {
-                //             return sendMessage(Component.text("arg: " + context.getArgument("arg", ExampleArg.class).name())).run(context);
-                //         })
-                //         .then(enchantment("ench")
-                //                 .executes(context -> {
-                //                     return sendMessage(Component.text("arg: " + context.getArgument("arg", ExampleArg.class).name() + " ench: " + context.getArgument("ench", Enchantment.class).translationKey())).run(context);
-                //                 })
-                //         )
-                // )
+                        .then(literal("profile").then(argument("gp", new PlayerProfileArgument()).executes(sendProfileMessage())))
+                        .then(literal("ench").then(argument("ench", new EnchantmentArgument()).executes(sendEnchantmentMessage())))
         );
         dispatcher.apply();
     }
@@ -44,6 +29,20 @@ public class ExamplePlugin extends JavaPlugin {
         VALUE_1,
         VALUE_2,
         THIRD;
+    }
+
+    private static Command<BukkitBrigadierCommandSource> sendProfileMessage() {
+        return context -> {
+            context.getSource().getBukkitSender().sendMessage(Component.text(PlayerProfileArgument.getProfileResult(context, "gp").getPlayerProfiles(context.getSource()).toString()));
+            return 1;
+        };
+    }
+
+    private static Command<BukkitBrigadierCommandSource> sendEnchantmentMessage() {
+        return context -> {
+            context.getSource().getBukkitSender().sendMessage(Component.translatable(EnchantmentArgument.getEnchantment(context, "ench")));
+            return 1;
+        };
     }
 
     private static Command<BukkitBrigadierCommandSource> sendMessage(Component msg) {
